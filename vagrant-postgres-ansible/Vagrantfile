@@ -1,0 +1,27 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+
+  # high quality image built by guys at Chef - https://github.com/chef/bento
+  config.vm.box = "bento/ubuntu-16.04"
+
+  # forward machine postgresql port, so you have access to it as it is on your machine
+  config.vm.network "forwarded_port", guest: 5432, host: 5432
+
+  # limit some of the resources vm will use
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = "512"
+    vb.cpus = 1
+  end
+
+  # set locale to UTF-8
+  config.vm.provision "shell", inline: <<-SHELL
+    echo 'LC_ALL="en_US.UTF-8"' > /etc/default/locale
+  SHELL
+
+  # install & set up
+  config.vm.provision "ansible" do |ansible|
+    ansible.playbook = "postgresql.yml"
+  end
+end

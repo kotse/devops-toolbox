@@ -1,0 +1,49 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+
+  # high quality image built by guys at Chef - https://github.com/chef/bento
+  config.vm.box = "bento/ubuntu-16.04"
+
+  # forward machine postgresql port, so you have access to it as it is on your machine
+  config.vm.network "forwarded_port", guest: 5432, host: 5432
+
+  # limit some of the resources vm will use
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = "512"
+    vb.cpus = 1
+  end
+
+  # set locale to UTF-8
+  config.vm.provision "shell", inline: <<-SHELL
+    echo 'LC_ALL="en_US.UTF-8"' > /etc/default/locale
+  SHELL
+
+  # install postgresql
+  config.vm.provision "shell", inline: <<-SHELL
+    echo "install postgresql..."
+    apt-get update
+    apt-get install -y postgresql-9.5
+  SHELL
+
+  # copy configuration files and restart
+  config.vm.provision "shell", inline: <<-SHELL
+    echo "copy configuration files and restart..."
+    sudo cp /vagrant/postgresql.conf /etc/postgresql/9.5/main/postgresql.conf
+    sudo cp /vagrant/pg_hba.conf /etc/postgresql/9.5/main/pg_hba.conf
+
+    sudo systemctl restart postgresql.service
+  SHELL
+
+  # set up test db and user
+  config.vm.provision "shell", inline: <<-SHELL
+    echo "set up vagrant db and user"
+    sudo -u postgres psql -c "DROP DATABASE IF EXISTS vagrant;"
+    sudo -u postgres psql -c "DROP USER IF EXISTS vagrant;"
+    sudo -u postgres psql -c "CREATE USER vagrant WITH PASSWORD 'vagrant' SUPERUSER;"
+    sudo -u postgres psql -c "CREATE DATABASE vagrant WITH ENCODING 'UTF-8' LC_COLLATE='en_US.UTF-8' LC_CTYPE='en_US.UTF-8' OWNER = vagrant;"
+    sudo -u postgres psql -c "GRANT ALL ON DATABASE vagrant TO vagrant;"
+  SHELL
+
+end
