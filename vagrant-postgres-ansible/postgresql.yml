@@ -15,16 +15,17 @@
         enabled: true
         state: started
 
-    - name: copy PostgreSQL config file
+    - name: set to listen to all addresses
       become: true
-      copy:
-        src: "{{ item }}"
-        dest: /etc/postgresql/9.5/main/
-        owner: postgres
-        group: postgres
-      with_items:
-        - "postgresql.conf"
-        - "pg_hba.conf"
+      lineinfile:
+        dest: /etc/postgresql/9.5/main/postgresql.conf
+        line: "listen_addresses='*'"
+
+    - name: permit all connections
+      become: true
+      lineinfile:
+        dest: /etc/postgresql/9.5/main/pg_hba.conf
+        line: "host all  all    0.0.0.0/0  md5"
 
     - name: restart postgres service
       become: true

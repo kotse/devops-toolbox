@@ -30,8 +30,12 @@ Vagrant.configure("2") do |config|
   # copy configuration files and restart
   config.vm.provision "shell", inline: <<-SHELL
     echo "copy configuration files and restart..."
-    sudo cp /vagrant/postgresql.conf /etc/postgresql/9.5/main/postgresql.conf
-    sudo cp /vagrant/pg_hba.conf /etc/postgresql/9.5/main/pg_hba.conf
+
+    # permit all remote connections
+    echo "host all  all    0.0.0.0/0  md5" >> /etc/postgresql/9.5/main/pg_hba.conf
+
+    # listen to all addresses
+    echo "listen_addresses='*'" >> /etc/postgresql/9.5/main/postgresql.conf
 
     sudo systemctl restart postgresql.service
   SHELL
